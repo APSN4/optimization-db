@@ -3,8 +3,10 @@ package com.optimiztiondb.news.repository;
 import com.optimiztiondb.news.model.News;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface NewsRepository extends JpaRepository<Long, News> {
+import java.util.Optional;
+
+public interface NewsRepository extends JpaRepository<News, Long> {
     News findTopByOrderByIdDesc();
 
-    News findById(Long randomNumber);
+    Optional<News> findById(Long randomNumber);
 }
