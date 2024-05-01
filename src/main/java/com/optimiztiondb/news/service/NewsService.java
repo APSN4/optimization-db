@@ -1,14 +1,15 @@
 package com.optimiztiondb.news.service;
 
-import com.optimiztiondb.news.enums.NewsEnum;
 import com.optimiztiondb.news.model.News;
 import com.optimiztiondb.news.repository.NewsRepository;
-import org.json.JSONObject;
+import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import com.optimiztiondb.news.constant.mutableVariables;
 
 import java.util.Optional;
 import java.util.Random;
@@ -18,19 +19,44 @@ public class NewsService {
     @Autowired
     NewsRepository newsRepository;
 
-    @CachePut(cacheNames = "news", unless = "#result.id == null", key = "#result.id")
-    public News getRandomNews() {
-        News news = newsRepository.findTopByOrderByIdDesc();
-        Long lastId = news.getId();
-        Optional<News> newsRandom = newsRepository.findById(getRandomNumber(lastId));
-        if (newsRandom.isPresent()) return newsRandom.get();
+    @Autowired
+    CacheManager cacheManager;
+
+    @Autowired
+    mutableVariables mutableVariables;
+
+    public Optional<News> getRandomNews() {
+        Long lastId = mutableVariables.getNewsCountAll();
+        if (lastId == null) {
+            News news = newsRepository.findTopByOrderByIdDesc();
+            lastId = news.getId();
+            mutableVariables.setNewsCountAll(lastId);
+        }
+        Long randLong = getRandomNumber(lastId);
+        if (randLong == 0) {
+            randLong = 1L;
+        }
+
+        // Проверяем наличие данных в кэше после получения последней новости из базы данных
+        Cache.ValueWrapper valueWrapper = cacheManager.getCache("news").get(randLong);
+        if (valueWrapper != null) {
+            return Optional.of((News) valueWrapper.get());
+        }
+
+        Optional<News> newsRandom = newsRepository.findById(randLong);
+        if (newsRandom.isPresent()){
+            cacheManager.getCache("news").put(newsRandom.get().getId(), newsRandom.get());
+            return newsRandom;
+        }
         else return getRandomNews();
     }
 
     @CachePut(cacheNames = "news", key = "#result.id")
     public News createNews(News news) {
         News newArticle = new News(news.getTitle(), news.getContent());
-        return newsRepository.saveAndFlush(newArticle);
+        News newsSaved = newsRepository.save(newArticle);
+        mutableVariables.setNewsCountAll(newsSaved.getId());
+        return newsSaved;
     }
 
     @CacheEvict(cacheNames = "news", key = "#id")
@@ -43,7 +69,7 @@ public class NewsService {
         }
     }
 
-    protected Long getRandomNumber(Long lastId) {
+    public Long getRandomNumber(Long lastId) {
         Random random = new Random();
         return random.nextLong(lastId + 1);
     }

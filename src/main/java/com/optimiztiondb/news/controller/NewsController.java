@@ -21,9 +21,9 @@ public class NewsController {
 
     @GetMapping("/random")
     public ResponseEntity<Object> getRandomNewsBody() {
-        News randNews = newsService.getRandomNews();
-        if (randNews != null) {
-            return new ResponseEntity<>(randNews, HttpStatus.OK);
+        Optional<News> randNews = newsService.getRandomNews();
+        if (randNews.isPresent()) {
+            return new ResponseEntity<>(randNews.get(), HttpStatus.OK);
         } else {
             return new ResponseEntity<>(randNews, HttpStatus.INTERNAL_SERVER_ERROR);
         }

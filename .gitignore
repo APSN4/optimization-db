@@ -65,3 +65,7 @@ Temporary Items
 
 # env
 src/main/resources/.env
+
+# logs
+/postgres_logs
+/redis_logs/
