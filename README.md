@@ -43,6 +43,30 @@ Run `jar` file:
   
 The collected files are stored in build/libs.
 
+#### ENV file
+
+**Location**: src/main/resources  
+
+````env
+POSTGRESQL_DRIVER=org.postgresql.Driver
+POSTGRESQL_URL=jdbc:postgresql://localhost:5432/postgres
+POSTGRESQL_USERNAME=admin
+POSTGRESQL_PASSWORD=root
+
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_USER=default
+REDIS_PASSWORD=your_password
+````
+
+### How to switch cache system
+**Location**: src/main/resources  
+
+**application.properties:**  
+
+Use the cache: `spring.cache.type=redis`  
+Don't use the cache: `spring.cache.type=none`
+
 ### API
 
 **[POST] Create news:**
